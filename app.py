@@ -41,11 +41,13 @@ st.markdown("""
         opacity: 0.9;
         box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
-    .card {
-        background-color: #ffffff;
+    .result-card {
+        background-color: #f8f9fa;
         padding: 20px;
         border-radius: 12px;
+        border-left: 6px solid #4A90E2;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-top: 20px;
         margin-bottom: 20px;
     }
     </style>
@@ -122,16 +124,37 @@ if submitted:
     }
     
     try:
-        with st.spinner("Analyzing data through AI model... ⏳"):
-           response = requests.post("https://mental-health-score-rvx5.onrender.com/predict", json=payload)
+        with st.spinner("AI Model analyze kar raha hai... (Pehli dafa 30 seconds lag sakte hain) ⏳"):
+            response = requests.post(
+                "https://mental-health-score-rvx5.onrender.com/predict", 
+                json=payload, 
+                timeout=45  # Render server sleep mode ko handle karne ke liye timeout
+            )
+            
         if response.status_code == 200:
             result = response.json()
             score = result.get("predicted_mental_health_score")
             
             st.balloons()
-            st.success(f"### 🎉 Predicted Mental Health Score: **{score}**")
-        else:
-            st.error(f"Server Error: {response.text}")
             
+            # Result Card Display
+            st.markdown(f"""
+                <div class="result-card">
+                    <h3 style="color: #333; margin-top: 0;">🎉 Prediction Result</h3>
+                    <p style="font-size: 1.2rem; color: #333; margin-bottom: 0;">Predicted Mental Health Score: <strong>{score}</strong></p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Score-based Tips
+            if score is not None:
+                if score < 50:
+                    st.info("💡 **Tip:** Screen time kam karne aur physical activity barhane ki koshish karein.")
+                else:
+                    st.success("🌟 **Great Job!** Aapki daily routine kaafi behtar lag rahi hai.")
+        else:
+            st.error(f"Server Error ({response.status_code}): {response.text}")
+            
+    except requests.exceptions.Timeout:
+        st.warning("⏳ Server ko jagney mein thoda ziada waqt lag gaya hai. Please ek baar dobara button dabayein!")
     except Exception as e:
-        st.error(f"FastAPI backend se connection nahi ho saka. Make sure uvicorn is running! \nError: {e}")
+        st.error(f"Connection Error: Backend se rabta nahi ho saka. \n\n**Error:** `{e}`")
