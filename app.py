@@ -123,8 +123,7 @@ if submitted:
     
     try:
         with st.spinner("Analyzing data through AI model... ⏳"):
-            response = requests.post("http://127.0.0.1:8000/predict", json=payload)
-        
+           response = requests.post("https://mental-health-score-rvx5.onrender.com/predict", json=payload)
         if response.status_code == 200:
             result = response.json()
             score = result.get("predicted_mental_health_score")
